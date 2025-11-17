@@ -1,5 +1,5 @@
 # image-search
-## Intelligent search images
+## Intelligent (semantic similarity) searching images based on Vision LLM automatically generated a detailed, descriptive caption
 
 ### Setup in Macos
 

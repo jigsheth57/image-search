@@ -52,6 +52,7 @@ public class ImageSearchController {
                     Object content = doc.getFormattedContent();
                     Double score = doc.getScore();
                     System.out.printf("   - Retrieved Document (Similarity Score %f): %s -> %s%n", score, content, fileName);
+
                     return fileName != null ? fileName.toString() : "UNKNOWN_FILE_REF";
                 })
                 .collect(Collectors.toList());

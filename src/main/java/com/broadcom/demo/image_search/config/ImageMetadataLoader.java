@@ -25,7 +25,7 @@ public class ImageMetadataLoader implements CommandLineRunner {
 
     // IMPORTANT: Update this path to your actual directory containing the
     // .txt description files and the associated .jpeg image files.
-    private static final String PHOTO_DIRECTORY = "/Users/jsheth/Downloads/image-data";
+    private static final String PHOTO_DIRECTORY = "/Volumes/data-r/Family Medias/Original-Photos";
     
     // Define the expected file extensions
     private static final String TEXT_EXT = ".txt";

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Search References</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#1E40AF',
+                        'secondary-gray': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 4px solid #F3F4F6;
+            border-top-color: #1E40AF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-secondary-gray min-h-screen font-sans antialiased p-4 sm:p-8">
+
+    <div class="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">Image Search References</h1>
+            <p class="mt-2 text-lg text-gray-600">Enter a query to retrieve **clickable links** to relevant image files.</p>
+        </header>
+
+        <!-- Search Input and Button -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <input type="text" id="searchInput" placeholder="e.g., Photos from a hiking trip"
+                   class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue shadow-inner text-gray-700 transition duration-150"
+                   aria-label="Search query input">
+            
+            <input type="number" id="topKInput" value="5" min="1" max="20"
+                   class="w-full sm:w-20 p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue shadow-inner text-center text-gray-700"
+                   aria-label="Number of results to retrieve">
+
+            <button id="searchButton" onclick="searchImages()"
+                    class="w-full sm:w-auto px-6 py-3 bg-primary-blue text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                </svg>
+                Search
+            </button>
+        </div>
+
+        <!-- Status/Error Message Area -->
+        <div id="statusMessage" class="mb-6 p-3 rounded-lg text-sm text-center font-medium hidden"></div>
+
+        <!-- Image Results List -->
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Retrieved Image Links</h2>
+            <ul id="resultsList" class="space-y-3">
+                <!-- Links will be inserted here -->
+            </ul>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="flex justify-center mt-10 hidden">
+            <div class="spinner"></div>
+            <p class="ml-3 text-primary-blue font-medium">Searching...</p>
+        </div>
+
+    </div>
+
+    <script>
+        // The API endpoint is relative since the HTML is served by the same app.
+        const API_ENDPOINT = '/search-images'; 
+        
+        // --- Remote Image Server Base Path ---
+        // This is the static URL where the actual image files are hosted.
+        const IMAGE_BASE_URL = 'http://192.168.1.148/~jigneshsheth/images/'; 
+
+        const searchInput = document.getElementById('searchInput');
+        const topKInput = document.getElementById('topKInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultsList = document.getElementById('resultsList');
+        const statusMessage = document.getElementById('statusMessage');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        /**
+         * Clears all status and result areas.
+         */
+        function clearResults() {
+            resultsList.innerHTML = '';
+            statusMessage.textContent = '';
+            statusMessage.classList.add('hidden');
+        }
+
+        /**
+         * Displays a status or error message to the user.
+         * @param {string} message - The message text.
+         * @param {string} type - 'success', 'error', or 'info'.
+         */
+        function displayStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden');
+            statusMessage.className = `mb-6 p-3 rounded-lg text-sm text-center font-medium ${type === 'error' ? 'bg-red-100 text-red-700' : type === 'success' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-primary-blue'}`;
+        }
+
+        /**
+         * Toggles the loading state of the UI.
+         * @param {boolean} isLoading
+         */
+        function setLoading(isLoading) {
+            searchButton.disabled = isLoading;
+            searchInput.disabled = isLoading;
+            topKInput.disabled = isLoading;
+            loadingIndicator.classList.toggle('hidden', !isLoading);
+            searchButton.innerHTML = isLoading 
+                ? '<div class="spinner !w-5 !h-5 !border-2"></div>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg> Search';
+        }
+
+        /**
+         * Renders a single filename as a clickable link.
+         * @param {string} filename The image file name.
+         */
+        function renderFileLink(filename) {
+            // Construct the full URL using the remote base path and the filename
+            const fullUrl = IMAGE_BASE_URL + filename;
+            
+            const listItem = document.createElement('li');
+            listItem.className = 'p-3 bg-secondary-gray rounded-lg hover:bg-gray-200 transition duration-150 shadow-sm';
+            
+            listItem.innerHTML = `
+                <a href="${fullUrl}" target="_blank" class="flex items-center text-primary-blue hover:underline font-medium break-all">
+                    <!-- Link Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    ${filename}
+                </a>
+            `;
+            resultsList.appendChild(listItem);
+        }
+
+        /**
+         * Handles the search logic, calling the Spring Boot backend.
+         */
+        async function searchImages() {
+            clearResults();
+            const query = searchInput.value.trim();
+            const topK = parseInt(topKInput.value, 10);
+
+            if (!query) {
+                displayStatus("Please enter a search query.", 'info');
+                return;
+            }
+            if (isNaN(topK) || topK < 1) {
+                displayStatus("Please enter a valid number for 'Top K' results.", 'error');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                // Use a relative path since the HTML page is served by the same domain and port
+                const url = new URL(API_ENDPOINT, window.location.origin);
+                url.searchParams.append('query', query);
+                url.searchParams.append('topK', topK);
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const imageReferences = await response.json();
+
+                if (imageReferences && imageReferences.length > 0) {
+                    imageReferences.forEach(renderFileLink);
+                    displayStatus(`Found ${imageReferences.length} matching image references. Click a link to view the photo.`, 'success');
+                } else {
+                    displayStatus("No image references found for your query.", 'info');
+                }
+
+            } catch (error) {
+                console.error("Search failed:", error);
+                // Use a more generic error message since the backend is on the same server
+                displayStatus(`An error occurred while fetching results. Check the Spring Boot console for details.`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        // Add event listener for Enter key on the input field
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                searchImages();
+            }
+        });
+        
+        // Initial setup message
+        window.onload = () => {
+             displayStatus(`Ready to search. Links will open images from ${IMAGE_BASE_URL}.`, 'info');
+        }
+
+    </script>
+</body>
+</html>
