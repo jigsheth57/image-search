@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Search References</title>
+    <title>Intelligent Image Finder: Image Search References</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -49,7 +49,7 @@
             <input type="text" id="searchInput" placeholder="e.g., Photos from a hiking trip"
                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue shadow-inner text-gray-700 transition duration-150"
                    aria-label="Search query input">
-            
+
             <input type="number" id="topKInput" value="5" min="1" max="20"
                    class="w-full sm:w-20 p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue shadow-inner text-center text-gray-700"
                    aria-label="Number of results to retrieve">
@@ -84,11 +84,11 @@
 
     <script>
         // The API endpoint is relative since the HTML is served by the same app.
-        const API_ENDPOINT = '/search-images'; 
-        
+        const API_ENDPOINT = '/search-images';
+
         // --- Remote Image Server Base Path ---
         // This is the static URL where the actual image files are hosted.
-        const IMAGE_BASE_URL = 'http://192.168.1.148/~jigneshsheth/images/'; 
+        const IMAGE_BASE_URL = 'http://192.168.1.148/~jigneshsheth/images/';
 
         const searchInput = document.getElementById('searchInput');
         const topKInput = document.getElementById('topKInput');
@@ -126,7 +126,7 @@
             searchInput.disabled = isLoading;
             topKInput.disabled = isLoading;
             loadingIndicator.classList.toggle('hidden', !isLoading);
-            searchButton.innerHTML = isLoading 
+            searchButton.innerHTML = isLoading
                 ? '<div class="spinner !w-5 !h-5 !border-2"></div>'
                 : '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg> Search';
         }
@@ -138,10 +138,10 @@
         function renderFileLink(filename) {
             // Construct the full URL using the remote base path and the filename
             const fullUrl = IMAGE_BASE_URL + filename;
-            
+
             const listItem = document.createElement('li');
             listItem.className = 'p-3 bg-secondary-gray rounded-lg hover:bg-gray-200 transition duration-150 shadow-sm';
-            
+
             listItem.innerHTML = `
                 <a href="${fullUrl}" target="_blank" class="flex items-center text-primary-blue hover:underline font-medium break-all">
                     <!-- Link Icon -->
@@ -202,14 +202,14 @@
                 setLoading(false);
             }
         }
-        
+
         // Add event listener for Enter key on the input field
         searchInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 searchImages();
             }
         });
-        
+
         // Initial setup message
         window.onload = () => {
              displayStatus(`Ready to search. Links will open images from ${IMAGE_BASE_URL}.`, 'info');

@@ -1,5 +1,7 @@
 # image-search
-## Intelligent (semantic similarity) searching images based on Vision LLM automatically generated a detailed, descriptive caption
+## Intelligent Image Finder: Search Photos by Meaning, Not by Manual Tags
+
+![Intelligent Image Finder](./screen-shot.png "Intelligent Image Finder")
 
 ### Setup in Macos
 
@@ -40,4 +42,3 @@
 `brew services start ollama`
 
 `ollama pull mxbai-embed-large`
-
