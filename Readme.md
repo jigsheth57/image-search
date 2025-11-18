@@ -33,7 +33,11 @@
 
 `GRANT CREATE ON SCHEMA public TO myappuser;`
 
+`\c imagesearchdb`
+
 `CREATE EXTENSION vector;`
+
+`\dx`
 
 #### Install Ollama & download LLM models
 
