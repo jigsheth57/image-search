@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # Configuration
-MODEL="gemma3:4b"
+MODEL="gemma3:12b-it-qat"
 # Set the directory containing the JPEG images
-IMAGE_DIR="/Volumes/data-r/Family Medias/Original-Photos"
+# IMAGE_DIR="/Volumes/data-r/Family Medias/Photos-Library"
+IMAGE_DIR="/Users/jsheth/Downloads/image-data"
 PROMPT="What is in this image? Describe it in detail."
 
 echo "Starting batch image processing with model: $MODEL in directory: $IMAGE_DIR"
@@ -18,13 +19,15 @@ fi
 # 2. Iterate over all .jpeg files in the specified directory
 # The -name "*.jpeg" ensures we only get files with that extension.
 # The 'while read -r IMAGE_PATH' loop safely handles filenames with spaces.
-find "$IMAGE_DIR" -maxdepth 1 -type f -iname "*.jpeg" | while read -r IMAGE_PATH
+find "$IMAGE_DIR" -maxdepth 2 -type f -iname "*.jpeg" | while read -r IMAGE_PATH
 do
     # Get the base filename (e.g., DSC_4010) without the extension and directory
     FILENAME_BASE=$(basename "$IMAGE_PATH" .jpeg)
 
+    IMAGE_BASE_DIR=$(dirname "$IMAGE_PATH")
+
     # Define the output file path in the same directory as the image
-    OUTPUT_FILE="${IMAGE_DIR}/${FILENAME_BASE}.txt"
+    OUTPUT_FILE="${IMAGE_BASE_DIR}/${FILENAME_BASE}.txt"
 
     echo "Processing image: $IMAGE_PATH"
 
@@ -72,6 +75,8 @@ EOF
         # Extract the content and save it to the new text file
         RESPONSE_TEXT=$(echo "$API_RESPONSE" | jq -r '.message.content')
         echo "$RESPONSE_TEXT" > "$OUTPUT_FILE"
+        EXIF_TEXT=$(exiftool -CreateDate -GPSPosition "$IMAGE_PATH")
+        echo "$EXIF_TEXT" >> "$OUTPUT_FILE"
         echo "  - Response stored in $OUTPUT_FILE"
     else
         # jq not found, save the full JSON response

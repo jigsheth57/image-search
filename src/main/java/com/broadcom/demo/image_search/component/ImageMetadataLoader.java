@@ -1,4 +1,4 @@
-package com.broadcom.demo.image_search.config;
+package com.broadcom.demo.image_search.component;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  * with image files, and load the text content into the PGVector store.
  */
 @Component
-public class ImageMetadataLoader implements CommandLineRunner {
+public class ImageMetadataLoader {
 
     private final VectorStore vectorStore;
 
@@ -35,8 +35,7 @@ public class ImageMetadataLoader implements CommandLineRunner {
         this.vectorStore = vectorStore;
     }
 
-    @Override
-    public void run(String... args) throws Exception {
+    public String loadImageMetadata() {
         System.out.println("--- 💾 Starting Photo RAG Data Loading ---");
         
         List<Document> documents = loadDocumentsFromLocalDirectory(PHOTO_DIRECTORY);
@@ -45,9 +44,9 @@ public class ImageMetadataLoader implements CommandLineRunner {
             // 2. Add the documents to the VectorStore.
             // Spring AI automatically embeds the 'content' string and stores the vector and metadata.
             vectorStore.add(documents);
-            System.out.printf("--- ✅ Successfully loaded %d documents into PGVector. ---%n", documents.size());
+            return "--- ✅ Successfully loaded "+documents.size()+" documents into PGVector. ---";
         } else {
-            System.out.println("--- ⚠️ No documents loaded. Check if the directory exists and contains matching files. ---");
+            return "--- ⚠️ No documents loaded. Check if the directory exists and contains matching files. ---";
         }
     }
 
@@ -66,7 +65,7 @@ public class ImageMetadataLoader implements CommandLineRunner {
             return documents;
         }
 
-        try (Stream<Path> paths = Files.walk(rootDir, 1)) {
+        try (Stream<Path> paths = Files.walk(rootDir, 2)) {
             // Filter for regular files that end with the text extension
             paths.filter(Files::isRegularFile)
                  .filter(p -> p.toString().endsWith(TEXT_EXT))

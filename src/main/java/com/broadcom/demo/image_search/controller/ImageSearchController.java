@@ -10,16 +10,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.broadcom.demo.image_search.component.ImageMetadataLoader;
+
 /**
  * REST Controller to handle user search queries and retrieve image references.
  */
 @RestController
 public class ImageSearchController {
     private final VectorStore vectorStore;
+    private final ImageMetadataLoader imgLoader;
 
     // Inject the configured VectorStore
-    public ImageSearchController(VectorStore vectorStore) {
+    public ImageSearchController(ImageMetadataLoader imgLoader, VectorStore vectorStore) {
         this.vectorStore = vectorStore;
+        this.imgLoader = imgLoader;
+    }
+
+    @GetMapping("/load-images")
+    public String loadImageMetadata() {
+        return imgLoader.loadImageMetadata();
     }
 
     /**
