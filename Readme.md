@@ -1,48 +1,25 @@
-# image-search
-## Intelligent Image Finder: Search Photos by Meaning, Not by Manual Tags
+# Intelligent Image Finder: Search Photos by Meaning, Not by Manual Tags
+
+## 📸 Image and Metadata Preparation
+
+* **Image Extraction (Optional):** Photos are optionally extracted from the **Apple Photo Library** using the `osxphotos` tool. The extraction process converts photos to **JPEG** format (`--convert-to-jpeg`), ensuring **high quality** (`--jpeg-quality 1.0`), and correcting orientation.
+* **Descriptive Document Generation:**
+    * A **Vision Model** (specifically **gemma3:12b-it-qat**) is used to generate a **descriptive text file** for each JPEG image.
+    * **EXIF metadata** (including **creation date** and **GPS location**) is appended to the descriptive text file.
+
+***
+
+## 💾 Document Storage and Search Indexing
+
+* **Embedding Generation:** **Vector embeddings** for each descriptive text file (including the appended EXIF data) are generated using the **mxbai-embed-large LLM**.
+* **Vector Storage:** The resulting vector embeddings are stored in a **Vector Store**, specifically **Postgres with the PGVector extension**.
+
+***
+
+## 🔎 User Request Processing
+
+* **Semantic Search:** A **semantic search** is performed on the **Postgres PGVector** database to retrieve relevant image references.
+* **Retrieval Criterion:** Image references are retrieved if they are **no more than 60 degrees apart** (a vector similarity threshold) from the user's query vector.
+* **Output Format:** The final result is a **clickable, ordered list of image references (hrefs)**.
 
 ![Intelligent Image Finder](./screen-shot.png "Intelligent Image Finder")
-
-### Setup in Macos
-
-#### Install Postgres
-
-`brew install postgresql@18`
-
-`brew install pgvector`
-
-`export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"`
-
-`export LDFLAGS="-L/opt/homebrew/opt/postgresql@18/lib"`
-
-`export CPPFLAGS="-I/opt/homebrew/opt/postgresql@18/include"`
-
-`brew services start postgresql@18`
-
-#### configure postgres for Vector extension and a user
-
-`psql postgres`
-
-`CREATE ROLE myappuser WITH LOGIN PASSWORD 'mypassword';`
-
-`CREATE DATABASE imagesearchdb OWNER myappuser;`
-
-`GRANT ALL PRIVILEGES ON DATABASE imagesearchdb TO myappuser;`
-
-`GRANT USAGE ON SCHEMA public TO myappuser;`
-
-`GRANT CREATE ON SCHEMA public TO myappuser;`
-
-`\c imagesearchdb`
-
-`CREATE EXTENSION vector;`
-
-`\dx`
-
-#### Install Ollama & download LLM models
-
-`brew install ollama`
-
-`brew services start ollama`
-
-`ollama pull mxbai-embed-large`

@@ -1,0 +1,48 @@
+# image-search
+## Intelligent Image Finder: Search Photos by Meaning, Not by Manual Tags
+
+![Intelligent Image Finder](./screen-shot.png "Intelligent Image Finder")
+
+### Setup in Macos
+
+#### Install Postgres
+
+`brew install postgresql@18`
+
+`brew install pgvector`
+
+`export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"`
+
+`export LDFLAGS="-L/opt/homebrew/opt/postgresql@18/lib"`
+
+`export CPPFLAGS="-I/opt/homebrew/opt/postgresql@18/include"`
+
+`brew services start postgresql@18`
+
+#### configure postgres for Vector extension and a user
+
+`psql postgres`
+
+`CREATE ROLE myappuser WITH LOGIN PASSWORD 'mypassword';`
+
+`CREATE DATABASE imagesearchdb OWNER myappuser;`
+
+`GRANT ALL PRIVILEGES ON DATABASE imagesearchdb TO myappuser;`
+
+`GRANT USAGE ON SCHEMA public TO myappuser;`
+
+`GRANT CREATE ON SCHEMA public TO myappuser;`
+
+`\c imagesearchdb`
+
+`CREATE EXTENSION vector;`
+
+`\dx`
+
+#### Install Ollama & download LLM models
+
+`brew install ollama`
+
+`brew services start ollama`
+
+`ollama pull mxbai-embed-large`
