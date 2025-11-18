@@ -1,8 +1,8 @@
-# Intelligent Image Finder: Search Photos by Meaning, Not by Manual Tags
+# 📸 Intelligent Image Finder: Search Photos by Meaning, Not by Manual Tags
 
 ## 📸 Image and Metadata Preparation
 
-* **Image Extraction (Optional):** Photos are optionally extracted from the **Apple Photo Library** using the `osxphotos` tool. The extraction process converts photos to **JPEG** format (`--convert-to-jpeg`), ensuring **high quality** (`--jpeg-quality 1.0`), and correcting orientation.
+* **Image Extraction (Optional):** Photos are optionally extracted from the **Apple Photo Library** using the `osxphotos` tool. The extraction process converts photos to **JPEG** format (`--convert-to-jpeg`), ensuring **high quality** (`--jpeg-quality 1.0`), and correcting orientation. **(see extract_images.sh script)**
 * **Descriptive Document Generation:**
     * A **Vision Model** (specifically **gemma3:12b-it-qat**) is used to generate a **descriptive text file** for each JPEG image.
     * **EXIF metadata** (including **creation date** and **GPS location**) is appended to the descriptive text file.
@@ -11,7 +11,7 @@
 
 ## 💾 Document Storage and Search Indexing
 
-* **Embedding Generation:** **Vector embeddings** for each descriptive text file (including the appended EXIF data) are generated using the **mxbai-embed-large LLM**.
+* **Embedding Generation:** **Vector embeddings** for each descriptive text file (including the appended EXIF data) are generated using the **mxbai-embed-large LLM**. **(see process_images.sh script)**
 * **Vector Storage:** The resulting vector embeddings are stored in a **Vector Store**, specifically **Postgres with the PGVector extension**.
 
 ***
