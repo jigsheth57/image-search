@@ -4,7 +4,7 @@
 
 * **Image Extraction (Optional):** Photos are optionally extracted from the **Apple Photo Library** using the `osxphotos` tool. The extraction process converts photos to **JPEG** format (`--convert-to-jpeg`), ensuring **high quality** (`--jpeg-quality 1.0`), and correcting orientation. **(see extract_images.sh script)**
 * **Descriptive Document Generation:**
-    * A **Vision Model** (specifically **gemma3:12b-it-qat**) is used to generate a **descriptive text file** for each JPEG image.
+    * A **Vision Model** (specifically **gemma3:4b-it-qat**) is used to generate a **descriptive text file** for each JPEG image.
     * **EXIF metadata** (including **creation date** and **GPS location**) is appended to the descriptive text file. **(see process_images.sh script)**
 
 ***

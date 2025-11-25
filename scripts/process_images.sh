@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-MODEL="gemma3:12b-it-qat"
+MODEL="gemma3:4b-it-qat"
 # Set the directory containing the JPEG images
 # IMAGE_DIR="/Volumes/data-r/Family Medias/Photos-Library"
 IMAGE_DIR="/Users/jsheth/Downloads/image-data"
