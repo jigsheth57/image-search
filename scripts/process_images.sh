@@ -3,8 +3,8 @@
 # Configuration
 MODEL="gemma3:4b-it-qat"
 # Set the directory containing the JPEG images
-# IMAGE_DIR="/Volumes/data-r/Family Medias/Photos-Library"
-IMAGE_DIR="/Users/jsheth/Downloads/image-data"
+IMAGE_DIR="/Volumes/data-r/Family Medias/Photos-Library"
+# IMAGE_DIR="/Users/jsheth/Downloads/image-data"
 PROMPT="What is in this image? Describe it in detail."
 
 echo "Starting batch image processing with model: $MODEL in directory: $IMAGE_DIR"

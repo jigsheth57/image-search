@@ -57,12 +57,20 @@ public class ImageSearchController {
         List<String> imageReferences = retrievedDocs.stream()
                 .map(doc -> {
                     // The key "image_file_name" must match the key used in PhotoRAGLoader
-                    Object fileName = doc.getMetadata().get("image_file_name");
+                    Object fileName = doc.getMetadata().get("image_full_path");
                     Object content = doc.getFormattedContent();
                     Double score = doc.getScore();
-                    System.out.printf("   - Retrieved Document (Similarity Score %f): %s -> %s%n", score, content, fileName);
+                    String ctxImagePath = "";
+                    if (fileName != null) {
+                      String image_full_path = fileName.toString();
+                      int lastIndex = image_full_path.lastIndexOf('/');
+                      int secondLastIndex = image_full_path.lastIndexOf('/', lastIndex - 1);
+                      ctxImagePath = image_full_path.substring(secondLastIndex);
+                    } else
+                      return "UNKNOWN_FILE_REF";
+                    System.out.printf("   - Retrieved Document (Similarity Score %f): %s -> %s%n", score, content, ctxImagePath);
 
-                    return fileName != null ? fileName.toString() : "UNKNOWN_FILE_REF";
+                    return ctxImagePath;
                 })
                 .collect(Collectors.toList());
 

@@ -25,8 +25,8 @@ public class ImageMetadataLoader {
 
     // IMPORTANT: Update this path to your actual directory containing the
     // .txt description files and the associated .jpeg image files.
-    private static final String PHOTO_DIRECTORY = "/Volumes/data-r/Family Medias/Original-Photos";
-    
+    private static final String PHOTO_DIRECTORY = "/Volumes/data-r/Family Medias/Photos-Library";
+
     // Define the expected file extensions
     private static final String TEXT_EXT = ".txt";
     private static final String IMAGE_EXT = ".jpeg";
@@ -37,9 +37,9 @@ public class ImageMetadataLoader {
 
     public String loadImageMetadata() {
         System.out.println("--- 💾 Starting Photo RAG Data Loading ---");
-        
+
         List<Document> documents = loadDocumentsFromLocalDirectory(PHOTO_DIRECTORY);
-        
+
         if (!documents.isEmpty()) {
             // 2. Add the documents to the VectorStore.
             // Spring AI automatically embeds the 'content' string and stores the vector and metadata.
@@ -74,16 +74,16 @@ public class ImageMetadataLoader {
                         // 1. Get the base name (e.g., "wedding_001")
                         String fileName = txtPath.getFileName().toString();
                         String baseName = fileName.substring(0, fileName.lastIndexOf(TEXT_EXT));
-                        
+
                         // 2. Construct the expected image file name (e.g., "wedding_001.jpeg")
                         String imageFileName = baseName + IMAGE_EXT;
                         Path imagePath = rootDir.resolve(imageFileName);
-                        
+
                         // 3. Check if the associated image file exists
                         if (Files.exists(imagePath)) {
                             // 4. Read the text content
                             String content = Files.readString(txtPath).trim();
-                            
+
                             // 5. Create the Document with the image file name in metadata
                             Document document = new Document(
                                 content,
@@ -105,7 +105,7 @@ public class ImageMetadataLoader {
         } catch (IOException e) {
             System.err.printf("Error traversing directory %s: %s%n", directoryPath, e.getMessage());
         }
-        
+
         return documents;
-    }    
+    }
 }
