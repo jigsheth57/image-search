@@ -22,4 +22,4 @@
 * **Retrieval Criterion:** Image references are retrieved if they are **no more than 60 degrees apart** (a vector similarity threshold) from the user's query vector.
 * **Output Format:** The final result is a **clickable, ordered list of image references (hrefs)**.
 
-![Intelligent Image Finder](./screen-shot.png "Intelligent Image Finder")
+![Intelligent Image Finder](./screenshot.png "Intelligent Image Finder")
