@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class ImageMetadataLoader {
     private String photoDirectory;
 
     private static final String TEXT_EXT = ".txt";
+    private static final String META_EXT = ".meta";
     private static final String IMAGE_EXT = ".jpeg";
     
     // Configuration
@@ -130,9 +132,11 @@ public class ImageMetadataLoader {
             String fileName = txtPath.getFileName().toString();
             String baseName = fileName.substring(0, fileName.lastIndexOf(TEXT_EXT));
             String imageFileName = baseName + IMAGE_EXT;
+            String metaFileName = baseName + META_EXT;
             
             // IMPORTANT: Look in the same directory as the text file
             Path imagePath = txtPath.getParent().resolve(imageFileName);
+            Path metaPath = txtPath.getParent().resolve(metaFileName);
 
             if (Files.exists(imagePath)) {
                 String content = Files.readString(txtPath).trim();
@@ -142,13 +146,32 @@ public class ImageMetadataLoader {
                 // instead of creating a duplicate.
                 String deterministicId = UUID.nameUUIDFromBytes(txtPath.toAbsolutePath().toString().getBytes()).toString();
 
-                Map<String, Object> metadata = Map.of(
-                        "image_file_name", imageFileName,
-                        "source_text_file", fileName,
-                        "source_text_file_path", txtPath.toAbsolutePath().toString(), // Used for checkpointing
-                        "image_full_path", imagePath.toAbsolutePath().toString()
-                );
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("image_file_name", imageFileName);
+                metadata.put("source_text_file", fileName);
+                metadata.put("source_text_file_path", txtPath.toAbsolutePath().toString());
+                metadata.put("image_full_path", imagePath.toAbsolutePath().toString());
 
+                if (Files.exists(metaPath)) {
+                    List<String> lines = Files.readAllLines(metaPath);
+
+                    // Ensure we have at least one line for Create Date
+                    if (lines.size() >= 1) {
+                        String dateLine = lines.get(0);
+                        if (dateLine.contains(":")) {
+                            // Split at the first colon and take the second part (the value)
+                            metadata.put("create_date", dateLine.split(":", 2)[1].trim());
+                        }
+                    }
+
+                    // Ensure we have a second line for GPS Position
+                    if (lines.size() >= 2) {
+                        String gpsLine = lines.get(1);
+                        if (gpsLine.contains(":")) {
+                            metadata.put("gps_position", gpsLine.split(":", 2)[1].trim());
+                        }
+                    }
+                }
                 Document doc = new Document(deterministicId,content, metadata);
                 
                 return doc;
