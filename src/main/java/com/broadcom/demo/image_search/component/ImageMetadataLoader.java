@@ -121,6 +121,9 @@ public class ImageMetadataLoader {
             
         } catch (Exception e) {
             logger.error("Failed to process batch. These files will be retried next run.", e);
+            for (Document document : batch) {
+                logger.info("Document: "+document.getMetadata().get("source_text_file_path"));
+            }
             // We throw or handle depending on if we want to abort the whole job
             throw new RuntimeException("Batch processing failed", e);
         }

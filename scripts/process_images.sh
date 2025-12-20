@@ -3,7 +3,7 @@
 # Configuration
 MODEL="gemma3:4b-it-qat"
 # Set the directory containing the JPEG images
-IMAGE_DIR="/Volumes/data-r/Family Medias/Photos-Library/chunk_0004"
+IMAGE_DIR="/Volumes/data-r/Family Medias/Photos-Library"
 # IMAGE_DIR="/Users/jsheth/Downloads/image-data"
 PROMPT="What is in this image? Describe it in detail."
 
@@ -19,7 +19,7 @@ fi
 # 2. Iterate over all .jpeg files in the specified directory
 # The -name "*.jpeg" ensures we only get files with that extension.
 # The 'while read -r IMAGE_PATH' loop safely handles filenames with spaces.
-find "$IMAGE_DIR" -maxdepth 1 -type f -iname "*.jpeg" | while read -r IMAGE_PATH
+find "$IMAGE_DIR" -maxdepth 2 -type f -iname "*.jpeg" | while read -r IMAGE_PATH
 do
     # Get the base filename (e.g., DSC_4010) without the extension and directory
     FILENAME_BASE=$(basename "$IMAGE_PATH" .jpeg)
