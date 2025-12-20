@@ -1,5 +1,7 @@
 package com.broadcom.demo.image_search.controller;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,7 +65,21 @@ public class ImageSearchController {
                 .collect(Collectors.toMap(doc -> {
                     // The key "image_file_name" must match the key used in PhotoRAGLoader
                     // Object fileName = doc.getMetadata().get("image_full_path");
-                    Object fileName = doc.getMetadata().get("image_file_name");
+                    Object fileName = doc.getMetadata().get("image_full_path");
+                    String imagePath = "";
+                    Path path = Paths.get(fileName.toString());
+                            
+                            // Get the number of elements in the path
+                            int count = path.getNameCount();
+                            
+                            if (count >= 2) {
+                                // Extracts the subpath from index (count - 2) to the end
+                                Path result = path.subpath(count - 2, count);
+                                System.out.println(result.toString());
+                                imagePath = result.toString();
+
+                                // Output: chunk_0009/IMG_0108 (3).jpeg
+                            }                    
                     Object content = doc.getFormattedContent();
                     Double score = doc.getScore();
                     // String ctxImagePath = "";
@@ -75,8 +91,8 @@ public class ImageSearchController {
                     // } else
                     // return "UNKNOWN_FILE_REF";
                     System.out.printf("   - Retrieved Document (Similarity Score %f): %s -> %s%n", score, content,
-                            fileName);
-                    return fileName.toString();
+                            imagePath);
+                    return imagePath;
                     // return ctxImagePath;
                 },
                         doc -> doc.getScore()));
