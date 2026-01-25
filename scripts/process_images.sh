@@ -29,9 +29,20 @@ do
     # Define the output file path in the same directory as the image
     OUTPUT_FILE="${IMAGE_BASE_DIR}/${FILENAME_BASE}.txt"
 
+    # Define the output file path in the same directory as the image
+    META_FILE="${IMAGE_BASE_DIR}/${FILENAME_BASE}.meta"
+
     echo "Processing image: $IMAGE_PATH"
 
     # Check if the output file already exists to avoid reprocessing (optional optimization)
+    if [ -f "$META_FILE" ]; then
+        echo "  - Note: Metadata file $META_FILE already exists. Skipping."
+        echo "---"
+    else
+        EXIF_TEXT=$(exiftool -CreateDate -GPSPosition "$IMAGE_PATH")
+        echo "$EXIF_TEXT" > "$META_FILE"
+    fi
+
     if [ -f "$OUTPUT_FILE" ]; then
         echo "  - Note: Output file $OUTPUT_FILE already exists. Skipping."
         echo "---"
@@ -75,8 +86,6 @@ EOF
         # Extract the content and save it to the new text file
         RESPONSE_TEXT=$(echo "$API_RESPONSE" | jq -r '.message.content')
         echo "$RESPONSE_TEXT" > "$OUTPUT_FILE"
-        EXIF_TEXT=$(exiftool -CreateDate -GPSPosition "$IMAGE_PATH")
-        echo "$EXIF_TEXT" >> "$OUTPUT_FILE"
         echo "  - Response stored in $OUTPUT_FILE"
     else
         # jq not found, save the full JSON response

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Configuration ---
-CHUNK_SIZE=2500
+CHUNK_SIZE=100
 # The chunk number will be padded to 4 digits (e.g., chunk_0001, chunk_0100)
 # This improves directory sorting.
 CHUNK_PREFIX="chunk_"
