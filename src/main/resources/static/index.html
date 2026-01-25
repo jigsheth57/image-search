@@ -37,251 +37,283 @@
         animation: spin 1s linear infinite;
       }
       img {
-        border: 1px solid #ddd; /* Gray border */
-        border-radius: 4px;  /* Rounded border */
-        padding: 5px; /* Some padding */
-        width: 150px; /* Set a small width */
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px;
+        width: 150px;
+        transition: transform 0.2s;
       }
-
-      /* Add a hover effect (blue shadow) */
       img:hover {
         box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
+        transform: scale(1.05);
       }
     </style>
   </head>
   <body class="bg-secondary-gray min-h-screen font-sans antialiased p-4 sm:p-8">
-    <div class="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl">
+    <div class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl">
       <header class="text-center mb-8">
         <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">
           Image Search References
         </h1>
         <p class="mt-2 text-lg text-gray-600">
-          Enter a query to retrieve **clickable links** to relevant image files.
+          Search your photo library using AI-powered semantic matching.
         </p>
       </header>
 
-      <!-- Search Input and Button -->
-      <div class="flex flex-col sm:flex-row gap-4 mb-8">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="e.g., Photos from a hiking trip"
-          class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue shadow-inner text-gray-700 transition duration-150"
-          aria-label="Search query input"
-        />
+      <!-- Search Controls Container -->
+      <div class="space-y-4 mb-8">
+        <div class="flex flex-col sm:flex-row gap-4">
+          <!-- Main Query -->
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="e.g., Photos from a hiking trip"
+            class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-primary-blue shadow-inner text-gray-700 outline-none transition"
+            aria-label="Search query input"
+          />
 
-        <input
-          type="number"
-          id="topKInput"
-          value="5"
-          min="1"
-          max="20"
-          class="w-full sm:w-20 p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue shadow-inner text-center text-gray-700"
-          aria-label="Number of results to retrieve"
-        />
-
-        <button
-          id="searchButton"
-          onclick="searchImages()"
-          class="w-full sm:w-auto px-6 py-3 bg-primary-blue text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
+          <button
+            id="searchButton"
+            onclick="searchImages()"
+            class="w-full sm:w-auto px-8 py-3 bg-primary-blue text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            <path
-              fill-rule="evenodd"
-              d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-              clip-rule="evenodd"
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+            </svg>
+            Search
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-700">
+          <!-- Year Filter -->
+          <div class="flex flex-col">
+            <label for="yearSelect" class="font-semibold mb-1">Filter by Year:</label>
+            <select
+              id="yearSelect"
+              class="p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-blue outline-none"
+            >
+              <option value="">All Years</option>
+              <!-- Options populated by JS -->
+            </select>
+          </div>
+
+          <!-- Top K -->
+          <div class="flex flex-col">
+            <label for="topKInput" class="font-semibold mb-1">Results:</label>
+            <input
+              type="number"
+              id="topKInput"
+              value="5"
+              min="1"
+              max="20"
+              class="w-20 p-2 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-primary-blue outline-none"
             />
-          </svg>
-          Search
-        </button>
+          </div>
+        </div>
       </div>
 
       <!-- Status/Error Message Area -->
-      <div
-        id="statusMessage"
-        class="mb-6 p-3 rounded-lg text-sm text-center font-medium hidden"
-      ></div>
+      <div id="statusMessage" class="mb-6 p-3 rounded-lg text-sm text-center font-medium hidden"></div>
 
       <!-- Image Results List -->
       <div class="mt-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
-          Retrieved Image Links
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2 flex justify-between items-center">
+          <span>Retrieved Images</span>
+          <span id="resultCount" class="text-sm font-normal text-gray-500"></span>
         </h2>
-        <ul id="resultsList" class="space-y-3">
-          <!-- Links will be inserted here -->
-        </ul>
+        <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <!-- Result Cards will be inserted here -->
+        </div>
       </div>
 
       <!-- Loading Indicator -->
       <div id="loadingIndicator" class="flex justify-center mt-10 hidden">
         <div class="spinner"></div>
-        <p class="ml-3 text-primary-blue font-medium">Searching...</p>
+        <p class="ml-3 text-primary-blue font-medium">Querying Vector Store...</p>
       </div>
     </div>
 
     <script>
-      // The API endpoint is relative since the HTML is served by the same app.
       const API_ENDPOINT = "/search-images";
-
-      // --- Remote Image Server Base Path ---
-      // This is the static URL where the actual image files are hosted.
       const IMAGE_BASE_URL = "/~jigneshsheth/images/";
 
       const searchInput = document.getElementById("searchInput");
       const topKInput = document.getElementById("topKInput");
+      const yearSelect = document.getElementById("yearSelect");
       const searchButton = document.getElementById("searchButton");
-      const resultsList = document.getElementById("resultsList");
+      const resultsGrid = document.getElementById("resultsGrid");
       const statusMessage = document.getElementById("statusMessage");
       const loadingIndicator = document.getElementById("loadingIndicator");
+      const resultCount = document.getElementById("resultCount");
 
       /**
-       * Clears all status and result areas.
+       * Dynamically populate the year dropdown from 1998 to current year
        */
+      function populateYears() {
+        const currentYear = new Date().getFullYear();
+        const startYear = 1998;
+        for (let year = currentYear; year >= startYear; year--) {
+          const option = document.createElement("option");
+          option.value = year;
+          option.textContent = year;
+          yearSelect.appendChild(option);
+        }
+      }
+
       function clearResults() {
-        resultsList.innerHTML = "";
+        resultsGrid.innerHTML = "";
+        resultCount.textContent = "";
         statusMessage.textContent = "";
         statusMessage.classList.add("hidden");
       }
 
-      /**
-       * Displays a status or error message to the user.
-       * @param {string} message - The message text.
-       * @param {string} type - 'success', 'error', or 'info'.
-       */
       function displayStatus(message, type) {
         statusMessage.textContent = message;
         statusMessage.classList.remove("hidden");
         statusMessage.className = `mb-6 p-3 rounded-lg text-sm text-center font-medium ${
-          type === "error"
-            ? "bg-red-100 text-red-700"
-            : type === "success"
-            ? "bg-green-100 text-green-700"
-            : "bg-blue-100 text-primary-blue"
+          type === "error" ? "bg-red-100 text-red-700" :
+          type === "success" ? "bg-green-100 text-green-700" : "bg-blue-100 text-primary-blue"
         }`;
       }
 
-      /**
-       * Toggles the loading state of the UI.
-       * @param {boolean} isLoading
-       */
       function setLoading(isLoading) {
         searchButton.disabled = isLoading;
         searchInput.disabled = isLoading;
+        yearSelect.disabled = isLoading;
         topKInput.disabled = isLoading;
         loadingIndicator.classList.toggle("hidden", !isLoading);
-        searchButton.innerHTML = isLoading
-          ? '<div class="spinner !w-5 !h-5 !border-2"></div>'
-          : '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg> Search';
+        if(isLoading) {
+            searchButton.innerHTML = '<div class="spinner !w-5 !h-5 !border-2"></div> Searching...';
+        } else {
+            searchButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg> Search';
+        }
       }
 
-      /**
-       * Renders a single filename as a clickable link.
-       * @param {string} filename The image file name.
-       */
-       function renderFileLink(filename, score) {
-         console.log("filename, score",filename, score);
-         // Construct the full URL using the remote base path and the filename
-         const fullUrl = IMAGE_BASE_URL + filename;
-         const percentageValue = score * 100;
-         const listItem = document.createElement("li");
-         listItem.className =
-           "p-3 bg-secondary-gray rounded-lg hover:bg-gray-200 transition duration-150 shadow-sm";
+      function parseDMS(input) {
+          // Regex to match: [Degrees] [Minutes] [Seconds] [Direction]
+          const regex = /(\d+)\s*deg\s*(\d+)'\s*([\d.]+)"\s*([NSEW])/g;
+          const matches = [...input.matchAll(regex)];
 
-         listItem.innerHTML = `
-                 <a href="${fullUrl}" target="_blank" class="flex items-center text-primary-blue hover:underline font-medium break-all">
-                     <!-- Link Icon -->
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                         <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                     </svg>
-                     <img src="${fullUrl}"/>
-                     <!-- ${filename} -->
-                 </a>
-                 <span> Score: ${percentageValue.toFixed(2)}%</span>
-             `;
-         resultsList.appendChild(listItem);
-       }
+          if (matches.length !== 2) {
+              throw new Error("Invalid coordinate format");
+          }
 
-      /**
-       * Handles the search logic, calling the Spring Boot backend.
-       */
+          const convert = (match) => {
+              const degrees = parseFloat(match[1]);
+              const minutes = parseFloat(match[2]);
+              const seconds = parseFloat(match[3]);
+              const direction = match[4];
+
+              let decimal = degrees + (minutes / 60) + (seconds / 3600);
+
+              // Make negative for South or West
+              if (direction === 'S' || direction === 'W') {
+                  decimal = decimal * -1;
+              }
+
+              return parseFloat(decimal.toFixed(6)); // Rounding to 6 decimal places
+          };
+          const gpsresult = convert(matches[0]) + "," +convert(matches[1]);
+          return gpsresult;
+      }
+
+      function renderImageCard(imageReferences) {
+        const fullUrl = IMAGE_BASE_URL + imageReferences.imagePath;
+        const confidence = (imageReferences.score * 100).toFixed(2);
+
+        const card = document.createElement("div");
+        let gpsvalue = imageReferences.gpsPosition;
+        if (gpsvalue !== null) {
+          const gpsresult = parseDMS(gpsvalue);
+          console.log(gpsresult);
+          gpsvalue = encodeURI(gpsresult);
+        }
+        card.className = "bg-gray-50 border border-gray-200 rounded-lg overflow-hidden flex flex-col items-center p-4 hover:shadow-lg transition shadow-sm";
+
+        card.innerHTML = `
+          <a href="${fullUrl}" target="_blank" class="mb-3 block">
+            <img src="${fullUrl}" alt="${imageReferences.imagePath}" class="max-w-full h-auto shadow-md" />
+          </a>
+          <div class="text-center w-full">
+            <p class="text-xs text-gray-500 truncate mb-1" title="${imageReferences.imagePath}">${imageReferences.imagePath}</p>
+            <div class="flex items-center gap-2 text-gray-500 text-xs mb-1">
+               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+               <span>${imageReferences.createDate || 'N/A'}</span>
+            </div>
+
+            ${imageReferences.gpsPosition ? `
+              <div class="flex items-center gap-2 text-gray-500 text-xs mb-2">
+                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                 <span class="truncate" title="${imageReferences.gpsPosition}"><a href="https://www.google.com/maps?q=${gpsvalue}" target="_blank">${imageReferences.gpsPosition}</a></span>
+              </div>
+            ` : ''}
+            <div class="flex items-center justify-center gap-2">
+              <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">Score: ${confidence}%</span>
+            </div>
+          </div>
+        `;
+        resultsGrid.appendChild(card);
+      }
+
       async function searchImages() {
         clearResults();
         const query = searchInput.value.trim();
         const topK = parseInt(topKInput.value, 10);
+        const selectedYear = yearSelect.value;
 
         if (!query) {
           displayStatus("Please enter a search query.", "info");
-          return;
-        }
-        if (isNaN(topK) || topK < 1) {
-          displayStatus(
-            "Please enter a valid number for 'Top K' results.",
-            "error"
-          );
           return;
         }
 
         setLoading(true);
 
         try {
-          // Use a relative path since the HTML page is served by the same domain and port
           const url = new URL(API_ENDPOINT, window.location.origin);
-          url.port = "8080"
+          url.port = "8080";
           url.searchParams.append("query", query);
           url.searchParams.append("topK", topK);
 
-          const response = await fetch(url);
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+          // Only append the year if a specific value is selected
+          // This allows backend @RequestParam(required=false) to work correctly
+          if (selectedYear) {
+            url.searchParams.append("year", selectedYear);
           }
 
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Status: ${response.status}`);
+
           const imageReferences = await response.json();
-          console.info(imageReferences);
-          if (imageReferences && Object.keys(imageReferences).length > 0) {
-            Object.entries(imageReferences).forEach(([filename, score]) => {
-              // console.log('Processing ${filename} with score: ${score.toFixed(6)}');
-            // Pass the extracted filename and score directly to the function
-              renderFileLink(filename, score);
-            });
-            // imageReferences.forEach(renderFileLink);
-            displayStatus(
-              `Found ${Object.keys(imageReferences).length} matching image references. Click a link to view the photo.`,
-              "success"
-            );
+          const count = Object.keys(imageReferences).length;
+
+          console.log(imageReferences);
+          if (imageReferences && count > 0) {
+            Object.entries(imageReferences)
+              .sort((a, b) => b[1] - a[1]) // Sort by score descending
+              .forEach(([imagePath, score], index) => {
+                renderImageCard(imageReferences[index]);
+              });
+
+            resultCount.textContent = `(${count} found)`;
+            displayStatus(`Successfully retrieved ${count} results.`, "success");
           } else {
-            displayStatus("No image references found for your query.", "info");
+            displayStatus("No matches found for your criteria.", "info");
           }
         } catch (error) {
           console.error("Search failed:", error);
-          // Use a more generic error message since the backend is on the same server
-          displayStatus(
-            `An error occurred while fetching results. Check the Spring Boot console for details.`,
-            "error"
-          );
+          displayStatus(`Connection error: ${error.message}. Is the backend running?`, "error");
         } finally {
           setLoading(false);
         }
       }
 
-      // Add event listener for Enter key on the input field
-      searchInput.addEventListener("keypress", function (e) {
-        if (e.key === "Enter") {
-          searchImages();
-        }
+      searchInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") searchImages();
       });
 
-      // Initial setup message
       window.onload = () => {
-        displayStatus(
-          `Ready to search. Links will open images from ${IMAGE_BASE_URL}.`,
-          "info"
-        );
+        populateYears();
+        displayStatus("Ready. Using semantic search across your library.", "info");
       };
     </script>
   </body>
