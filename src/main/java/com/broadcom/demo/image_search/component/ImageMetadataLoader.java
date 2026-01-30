@@ -136,13 +136,15 @@ public class ImageMetadataLoader {
             String baseName = fileName.substring(0, fileName.lastIndexOf(TEXT_EXT));
             String imageFileName = baseName + IMAGE_EXT;
             String metaFileName = baseName + META_EXT;
-            
+            int maxChars = 1750;
             // IMPORTANT: Look in the same directory as the text file
             Path imagePath = txtPath.getParent().resolve(imageFileName);
             Path metaPath = txtPath.getParent().resolve(metaFileName);
 
             if (Files.exists(imagePath)) {
                 String content = Files.readString(txtPath).trim();
+                // Get the first 1750 characters, or the whole string if it's shorter
+                String result = content.substring(0, Math.min(content.length(), maxChars));
 
                 // Generate a Deterministic ID based on the file path.
                 // This ensures that if we re-process this file, we update the ID
@@ -177,8 +179,8 @@ public class ImageMetadataLoader {
                 } else {
                     logger.warn("Skipping: Metadata {} not found.", metaFileName);
                 }
-                Document doc = new Document(deterministicId,content, metadata);
-                
+                Document doc = new Document(deterministicId,result, metadata);
+                logger.info("Info: created doc {}.", txtPath);
                 return doc;
             } else {
                 logger.warn("Skipping {}: Image {} not found.", fileName, imageFileName);
