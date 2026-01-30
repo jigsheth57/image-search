@@ -174,6 +174,8 @@ public class ImageMetadataLoader {
                             metadata.put("gps_position", gpsLine.split(":", 2)[1].trim());
                         }
                     }
+                } else {
+                    logger.warn("Skipping: Metadata {} not found.", metaFileName);
                 }
                 Document doc = new Document(deterministicId,content, metadata);
                 
