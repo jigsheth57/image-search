@@ -3,9 +3,10 @@ package com.broadcom.demo.image_search.controller;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -26,6 +27,7 @@ import com.broadcom.demo.image_search.component.ImageMetadataLoader;
 public class ImageSearchController {
     private final VectorStore vectorStore;
     private final ImageMetadataLoader imgLoader;
+    private static final Logger logger = LoggerFactory.getLogger(ImageSearchController.class);
 
     public ImageSearchController(ImageMetadataLoader imgLoader, VectorStore vectorStore) {
         this.vectorStore = vectorStore;
@@ -58,9 +60,9 @@ public class ImageSearchController {
             @RequestParam(value = "year", required = false) String year,
             @RequestParam(value = "topK", defaultValue = "5") int topK) {
 
-        System.out.println("--- 🔍 Processing Query: '" + query + "' (Year: " + (year != null ? year : "Any") + ") ---");
+        logger.info("--- 🔍 Processing Query: '{}' (Year: {}) ---", query, (year != null ? year : "Any"));
 
-        // 1. Build Metadata Filter Expression
+        if (topK > 50) topK = 50;
         Filter.Expression filterExpression = null;
 
         // Using a more standard approach for metadata filtering in Spring AI
@@ -97,17 +99,13 @@ public class ImageSearchController {
                     String createDate = (String) doc.getMetadata().get("create_date");
                     String gps = (String) doc.getMetadata().get("gps_position");
                     Double score = doc.getScore();
-                    System.out.printf("   - Retrieved (Score %f): %s | Date: %s | GPS: %s%n",
-                        score,
-                        imagePath,
-                        createDate,
-                        gps);
+                    logger.info("   - Retrieved (Score {}): {} | Date: {} | GPS: {}", score, imagePath, createDate, gps);
 
                     return new ImageResult(imagePath, score, createDate, gps);
                 })
                 .collect(Collectors.toList());
 
-        System.out.println("--- ✅ Retrieved " + imageResult.size() + " image results. ---");
+        logger.info("--- ✅ Retrieved {} image results. ---", imageResult.size());
         return imageResult;
     }
 }
