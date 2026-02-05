@@ -1,5 +1,6 @@
 package com.broadcom.demo.image_search.component;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,8 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.broadcom.demo.image_search.exception.BatchProcessingException;
 
 @Component
 public class ImageMetadataLoader {
@@ -95,7 +98,7 @@ public class ImageMetadataLoader {
                 totalLoaded += batch.size();
             }
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Error traversing directory", e);
             return "--- ❌ Error during loading: " + e.getMessage() + " ---";
         }
@@ -106,7 +109,7 @@ public class ImageMetadataLoader {
     /**
      * Sends the batch to VectorStore and updates the local checkpoint file.
      */
-    private void processBatch(List<Document> batch) {
+    private void processBatch(List<Document> batch) throws BatchProcessingException {
         try {
             // Write to Vector Store
             vectorStore.add(batch);
@@ -117,7 +120,8 @@ public class ImageMetadataLoader {
                 .toList();
             
             appendToCheckpoint(processedPaths);
-            logger.info("Batch processed successfully (Size: {})", batch.size());
+            // Structured logging for batch info
+            logger.info("Processed batch of {} documents", batch.size());
             
         } catch (Exception e) {
             logger.error("Failed to process batch. These files will be retried next run.", e);
@@ -125,7 +129,7 @@ public class ImageMetadataLoader {
                 logger.info("Document: "+document.getMetadata().get("source_text_file_path"));
             }
             // We throw or handle depending on if we want to abort the whole job
-            throw new RuntimeException("Batch processing failed", e);
+            throw new BatchProcessingException("Batch processing failed", e);
         }
     }
 
@@ -142,9 +146,17 @@ public class ImageMetadataLoader {
             Path metaPath = txtPath.getParent().resolve(metaFileName);
 
             if (Files.exists(imagePath)) {
-                String content = Files.readString(txtPath).trim();
-                // Get the first 1750 characters, or the whole string if it's shorter
-                String result = content.substring(0, Math.min(content.length(), maxChars));
+                // Read up to maxChars from the file
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader br = Files.newBufferedReader(txtPath, StandardCharsets.UTF_8)) {
+                    int charsRead = 0;
+                    int c;
+                    while ((c = br.read()) != -1 && charsRead < maxChars) {
+                        sb.append((char) c);
+                        charsRead++;
+                    }
+                }
+                String result = sb.toString().trim();
 
                 // Generate a Deterministic ID based on the file path.
                 // This ensures that if we re-process this file, we update the ID
