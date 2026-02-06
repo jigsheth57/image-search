@@ -3,318 +3,342 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Intelligent Image Finder: Image Search References</title>
-    <!-- Load Tailwind CSS -->
+    <title>Pro Image Finder: Map Navigation & Timeline</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
       tailwind.config = {
         theme: {
           extend: {
-            colors: {
-              "primary-blue": "#1E40AF",
-              "secondary-gray": "#F3F4F6",
-            },
-            fontFamily: {
-              sans: ["Inter", "sans-serif"],
-            },
+            colors: { "primary-blue": "#1E40AF", "secondary-gray": "#F3F4F6" },
+            fontFamily: { sans: ["Inter", "sans-serif"] },
           },
         },
       };
     </script>
     <style>
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .spinner { display: inline-block; width: 1.5rem; height: 1.5rem; border: 4px solid #f3f4f6; border-top-color: #1e40af; border-radius: 50%; animation: spin 1s linear infinite; }
+      
+      .map-wrapper { position: relative; cursor: pointer; border-radius: 12px; overflow: hidden; margin-top: 12px; border: 1px solid #e5e7eb; }
+      .map-container { height: 140px; width: 100%; z-index: 10; }
+      .map-overlay { 
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(30, 64, 175, 0.05); z-index: 20; display: flex; 
+        align-items: center; justify-content: center; opacity: 0; transition: all 0.3s;
+        pointer-events: none;
       }
-      .spinner {
-        display: inline-block;
-        width: 1.5rem;
-        height: 1.5rem;
-        border: 4px solid #f3f4f6;
-        border-top-color: #1e40af;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      img {
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 5px;
-        width: 150px;
-        transition: transform 0.2s;
-      }
-      img:hover {
-        box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
-        transform: scale(1.05);
-      }
+      .map-wrapper:hover .map-overlay { opacity: 1; background: rgba(30, 64, 175, 0.2); }
+      .map-badge { background: white; padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 800; color: #1E40AF; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+      #lightbox { display: none; transition: opacity 0.3s ease; }
+      #lightbox.active { display: flex; opacity: 1; }
+      .date-header { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+      #lightboxImg { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
   </head>
   <body class="bg-secondary-gray min-h-screen font-sans antialiased p-4 sm:p-8">
-    <div class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl">
-      <header class="text-center mb-8">
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">
-          Image Search References
-        </h1>
-        <p class="mt-2 text-lg text-gray-600">
-          Search your photo library using AI-powered semantic matching.
-        </p>
+    
+    <div class="max-w-6xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-2xl">
+      <header class="text-center mb-10">
+        <h1 class="text-4xl font-black text-gray-900 mb-2">Media Archive Explorer</h1>
+        <p class="text-gray-500 uppercase tracking-widest text-xs font-bold">Interactive Timeline • Clickable Maps • Slideshow</p>
       </header>
 
-      <!-- Search Controls Container -->
-      <div class="space-y-4 mb-8">
+      <div class="space-y-4 mb-10 bg-gray-50 p-6 rounded-3xl border border-gray-100 shadow-inner">
         <div class="flex flex-col sm:flex-row gap-4">
-          <!-- Main Query -->
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="e.g., Photos from a hiking trip"
-            class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-primary-blue shadow-inner text-gray-700 outline-none transition"
-            aria-label="Search query input"
-          />
-
-          <button
-            id="searchButton"
-            onclick="searchImages()"
-            class="w-full sm:w-auto px-8 py-3 bg-primary-blue text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-            </svg>
-            Search
+          <input type="text" id="searchInput" placeholder="Search for 'Hiking trip' or 'Sunset over water'..." 
+                 class="flex-grow p-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-primary-blue outline-none transition-all text-lg" />
+          <button id="searchButton" onclick="searchImages()" 
+                  class="px-12 py-4 bg-primary-blue text-white font-black rounded-2xl shadow-lg hover:bg-blue-800 transition-all transform active:scale-95">
+            SEARCH
           </button>
         </div>
-
-        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-700">
-          <!-- Year Filter -->
-          <div class="flex flex-col">
-            <label for="yearSelect" class="font-semibold mb-1">Filter by Year:</label>
-            <select
-              id="yearSelect"
-              class="p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-blue outline-none"
-            >
-              <option value="">All Years</option>
-              <!-- Options populated by JS -->
-            </select>
-          </div>
-
-          <!-- Top K -->
-          <div class="flex flex-col">
-            <label for="topKInput" class="font-semibold mb-1">Results:</label>
-            <input
-              type="number"
-              id="topKInput"
-              value="5"
-              min="1"
-              max="20"
-              class="w-20 p-2 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-primary-blue outline-none"
-            />
-          </div>
+        <div class="flex flex-wrap items-center gap-8 text-sm font-bold text-gray-600 px-2">
+          <div class="flex flex-col"><label class="mb-1 text-gray-400">Year Filter</label><select id="yearSelect" class="p-2 border rounded-xl bg-white outline-none"></select></div>
+          <div class="flex flex-col"><label class="mb-1 text-gray-400">Max Results</label><input type="number" id="topKInput" value="24" class="w-24 p-2 border rounded-xl text-center outline-none" /></div>
+          <div id="resultCount" class="ml-auto text-primary-blue bg-blue-50 px-4 py-2 rounded-full hidden"></div>
         </div>
       </div>
 
-      <!-- Status/Error Message Area -->
-      <div id="statusMessage" class="mb-6 p-3 rounded-lg text-sm text-center font-medium hidden"></div>
-
-      <!-- Image Results List -->
-      <div class="mt-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2 flex justify-between items-center">
-          <span>Retrieved Images</span>
-          <span id="resultCount" class="text-sm font-normal text-gray-500"></span>
-        </h2>
-        <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <!-- Result Cards will be inserted here -->
-        </div>
+      <div id="resultsContent" class="min-h-[200px]"></div>
+      
+      <div id="loadMoreContainer" class="flex justify-center mt-12 mb-8 hidden">
+        <button onclick="renderNextBatch()" class="px-12 py-4 bg-white border-2 border-primary-blue text-primary-blue font-black rounded-full hover:bg-primary-blue hover:text-white transition-all shadow-xl">
+          LOAD MORE MEMORIES
+        </button>
       </div>
 
-      <!-- Loading Indicator -->
-      <div id="loadingIndicator" class="flex justify-center mt-10 hidden">
-        <div class="spinner"></div>
-        <p class="ml-3 text-primary-blue font-medium">Querying Vector Store...</p>
+      <div id="loadingIndicator" class="flex flex-col items-center mt-10 hidden">
+        <div class="spinner mb-4"></div>
+        <p class="text-primary-blue font-bold animate-pulse">Scanning Archive Metadata...</p>
+      </div>
+    </div>
+
+    <div id="lightbox" class="fixed inset-0 bg-black/98 z-50 flex-col items-center justify-center p-4 backdrop-blur-2xl">
+      <button onclick="navigateLightbox(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-7xl transition-colors">&lsaquo;</button>
+      <button onclick="navigateLightbox(1)" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-7xl transition-colors">&rsaquo;</button>
+      
+      <div class="relative flex flex-col items-center">
+        <img id="lightboxImg" src="" class="max-w-full max-h-[70vh] rounded-lg shadow-2xl object-contain border border-white/10" />
+        <p id="lightboxCaption" class="text-white mt-8 font-bold bg-white/10 px-6 py-3 rounded-full backdrop-blur-md border border-white/5 text-sm"></p>
+      </div>
+
+      <div class="absolute bottom-10 flex gap-8 items-center bg-white/5 p-5 rounded-3xl border border-white/10 backdrop-blur-xl">
+        <button onclick="rotateImage()" class="text-white hover:text-blue-400 flex flex-col items-center gap-2 group">
+          <span class="text-2xl group-hover:rotate-45 transition-transform">🔄</span><span class="text-[9px] font-black tracking-widest uppercase">Rotate</span>
+        </button>
+        <button id="slideshowBtn" onclick="toggleSlideshow()" class="text-white hover:text-green-400 flex flex-col items-center gap-2">
+          <span id="playIcon" class="text-2xl">▶️</span><span id="playText" class="text-[9px] font-black tracking-widest uppercase">Play</span>
+        </button>
+        <div class="h-10 w-px bg-white/10"></div>
+        <button onclick="closeLightbox()" class="text-white hover:text-red-500 flex flex-col items-center gap-2">
+          <span class="text-2xl">✕</span><span class="text-[9px] font-black tracking-widest uppercase">Close</span>
+        </button>
       </div>
     </div>
 
     <script>
-      const API_ENDPOINT = "/search-images";
-      const IMAGE_BASE_URL = "/~jigneshsheth/images/";
+      const API_ENDPOINT = "/search-images"; //
+      const IMAGE_BASE_URL = "/~jigneshsheth/images/"; //
+      
+      let allFoundResults = [];
+      let currentDisplayIndex = 0;
+      let currentLightboxIndex = 0;
+      let rotation = 0;
+      let slideshowInterval = null;
+      const BATCH_SIZE = 6;
 
-      const searchInput = document.getElementById("searchInput");
-      const topKInput = document.getElementById("topKInput");
-      const yearSelect = document.getElementById("yearSelect");
-      const searchButton = document.getElementById("searchButton");
-      const resultsGrid = document.getElementById("resultsGrid");
-      const statusMessage = document.getElementById("statusMessage");
-      const loadingIndicator = document.getElementById("loadingIndicator");
-      const resultCount = document.getElementById("resultCount");
-
-      /**
-       * Dynamically populate the year dropdown from 1998 to current year
-       */
       function populateYears() {
-        const currentYear = new Date().getFullYear();
-        const startYear = 1998;
-        for (let year = currentYear; year >= startYear; year--) {
-          const option = document.createElement("option");
-          option.value = year;
-          option.textContent = year;
-          yearSelect.appendChild(option);
+        const currentYear = new Date().getFullYear(); //
+        yearSelect.innerHTML = '<option value="">All Years</option>';
+        for (let y = currentYear; y >= 1998; y--) {
+          const opt = document.createElement("option");
+          opt.value = y; opt.textContent = y;
+          yearSelect.appendChild(opt);
         }
       }
 
-      function clearResults() {
-        resultsGrid.innerHTML = "";
-        resultCount.textContent = "";
-        statusMessage.textContent = "";
-        statusMessage.classList.add("hidden");
+      function getMonthYear(dateStr) {
+        if (!dateStr || dateStr === "N/A") return "Date Unknown";
+        try {
+          const parts = dateStr.split(/[:\-\s]/); //
+          const date = new Date(parts[0], parts[1] - 1, parts[2] || 1);
+          return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        } catch { return "Date Unknown"; }
       }
 
-      function displayStatus(message, type) {
-        statusMessage.textContent = message;
-        statusMessage.classList.remove("hidden");
-        statusMessage.className = `mb-6 p-3 rounded-lg text-sm text-center font-medium ${
-          type === "error" ? "bg-red-100 text-red-700" :
-          type === "success" ? "bg-green-100 text-green-700" : "bg-blue-100 text-primary-blue"
-        }`;
+      function safeId(str) { return "grid-" + str.replace(/[^a-z0-9]/gi, ''); }
+
+      function parseDMS(input) { //
+        const regex = /(\d+)\s*deg\s*(\d+)'\s*([\d.]+)"\s*([NSEW])/g;
+        const matches = [...input.matchAll(regex)];
+        if (matches.length !== 2) return null;
+        const convert = (m) => {
+          let d = parseFloat(m[1]) + (parseFloat(m[2]) / 60) + (parseFloat(m[3]) / 3600);
+          return (m[4] === 'S' || m[4] === 'W') ? d * -1 : d;
+        };
+        return [convert(matches[0]), convert(matches[1])];
       }
 
-      function setLoading(isLoading) {
-        searchButton.disabled = isLoading;
-        searchInput.disabled = isLoading;
-        yearSelect.disabled = isLoading;
-        topKInput.disabled = isLoading;
-        loadingIndicator.classList.toggle("hidden", !isLoading);
-        if(isLoading) {
-            searchButton.innerHTML = '<div class="spinner !w-5 !h-5 !border-2"></div> Searching...';
-        } else {
-            searchButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg> Search';
+      async function getAddress(lat, lon) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+          const data = await res.json();
+          return data.address.city || data.address.town || data.address.village || data.address.country || "Specific Location";
+        } catch { return "Coordinates Found"; }
+      }
+
+      function createTimelineSection(groupName) {
+        const gId = safeId(groupName);
+        let section = document.getElementById(gId);
+        
+        if (!section) {
+          const container = document.createElement("div");
+          container.className = "mb-16";
+          container.innerHTML = `
+            <div class="date-header py-4 mb-8 border-b-2 border-gray-100 flex items-center justify-between">
+              <h3 class="text-2xl font-black text-gray-800 uppercase tracking-tighter">${groupName}</h3>
+              <div class="h-1 flex-grow mx-6 bg-gray-50 rounded-full"></div>
+            </div>
+            <div id="${gId}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"></div>
+          `;
+          resultsContent.appendChild(container);
+          section = document.getElementById(gId);
         }
+        return section;
       }
 
-      function parseDMS(input) {
-          // Regex to match: [Degrees] [Minutes] [Seconds] [Direction]
-          const regex = /(\d+)\s*deg\s*(\d+)'\s*([\d.]+)"\s*([NSEW])/g;
-          const matches = [...input.matchAll(regex)];
-
-          if (matches.length !== 2) {
-              throw new Error("Invalid coordinate format");
-          }
-
-          const convert = (match) => {
-              const degrees = parseFloat(match[1]);
-              const minutes = parseFloat(match[2]);
-              const seconds = parseFloat(match[3]);
-              const direction = match[4];
-
-              let decimal = degrees + (minutes / 60) + (seconds / 3600);
-
-              // Make negative for South or West
-              if (direction === 'S' || direction === 'W') {
-                  decimal = decimal * -1;
-              }
-
-              return parseFloat(decimal.toFixed(6)); // Rounding to 6 decimal places
-          };
-          const gpsresult = convert(matches[0]) + "," +convert(matches[1]);
-          return gpsresult;
-      }
-
-      function renderImageCard(imageReferences) {
-        const fullUrl = IMAGE_BASE_URL + imageReferences.imagePath;
-        const confidence = (imageReferences.score * 100).toFixed(2);
-
+      function renderImageCard(item, index, targetGrid) {
+        const fullUrl = IMAGE_BASE_URL + item.imagePath; //
+        const score = (item.score * 100).toFixed(0);
         const card = document.createElement("div");
-        let gpsvalue = imageReferences.gpsPosition;
-        if (gpsvalue !== null) {
-          const gpsresult = parseDMS(gpsvalue);
-          console.log(gpsresult);
-          gpsvalue = encodeURI(gpsresult);
-        }
-        card.className = "bg-gray-50 border border-gray-200 rounded-lg overflow-hidden flex flex-col items-center p-4 hover:shadow-lg transition shadow-sm";
+        card.className = "bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col group relative";
+        
+        let coords = item.gpsPosition ? parseDMS(item.gpsPosition) : null;
 
         card.innerHTML = `
-          <a href="${fullUrl}" target="_blank" class="mb-3 block">
-            <img src="${fullUrl}" alt="${imageReferences.imagePath}" class="max-w-full h-auto shadow-md" />
-          </a>
-          <div class="text-center w-full">
-            <p class="text-xs text-gray-500 truncate mb-1" title="${imageReferences.imagePath}">${imageReferences.imagePath}</p>
-            <div class="flex items-center gap-2 text-gray-500 text-xs mb-1">
-               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-               <span>${imageReferences.createDate || 'N/A'}</span>
-            </div>
-
-            ${imageReferences.gpsPosition ? `
-              <div class="flex items-center gap-2 text-gray-500 text-xs mb-2">
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                 <span class="truncate" title="${imageReferences.gpsPosition}"><a href="https://www.google.com/maps?q=${gpsvalue}" target="_blank">${imageReferences.gpsPosition}</a></span>
-              </div>
-            ` : ''}
-            <div class="flex items-center justify-center gap-2">
-              <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">Score: ${confidence}%</span>
+          <div class="relative h-60 overflow-hidden cursor-pointer" onclick="openLightbox(${index})">
+            <img src="${fullUrl}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" loading="lazy" />
+            <div class="absolute top-4 left-4 bg-black/60 text-white text-[10px] font-black px-3 py-1 rounded-full backdrop-blur-md border border-white/10 uppercase tracking-widest">
+              Match ${score}%
             </div>
           </div>
+          <div class="p-6 flex-grow flex flex-col">
+            <div class="text-[9px] text-gray-300 font-mono mb-4 uppercase tracking-tighter truncate" title="${item.imagePath}">${item.imagePath}</div>
+            <div class="text-sm font-black text-gray-900 mb-2 flex items-center gap-2">📅 ${item.createDate || 'Unknown Date'}</div>
+            <div class="text-xs font-bold text-blue-500 mb-2 min-h-[1.5em]"><span id="geo-${index}">📍 Mapping...</span></div>
+            
+            ${coords ? `
+              <div class="map-wrapper" id="map-wrapper-${index}" title="Click to view in Google Maps">
+                <div id="map-${index}" class="map-container grayscale contrast-125"></div>
+                <div class="map-overlay">
+                  <div class="map-badge uppercase tracking-tighter">View on Google Maps</div>
+                </div>
+              </div>` : ''}
+          </div>
         `;
-        resultsGrid.appendChild(card);
+        targetGrid.appendChild(card);
+
+        if (coords) {
+          getAddress(coords[0], coords[1]).then(addr => document.getElementById(`geo-${index}`).innerText = `📍 ${addr}`);
+          
+          // Initialize Leaflet
+          const map = L.map(`map-${index}`, { 
+            zoomControl: false, 
+            attributionControl: false,
+            dragging: false, // Static map behavior to prioritize the click-through
+            scrollWheelZoom: false
+          }).setView(coords, 13);
+          
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+          L.marker(coords).addTo(map);
+
+          // Click handler for Google Maps
+          document.getElementById(`map-wrapper-${index}`).addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.open(`https://www.google.com/maps?q=${coords[0]},${coords[1]}`, '_blank');
+          });
+        } else {
+          const label = document.getElementById(`geo-${index}`);
+          if (label) label.innerText = "No GPS Coordinates";
+        }
       }
 
-      async function searchImages() {
-        clearResults();
-        const query = searchInput.value.trim();
-        const topK = parseInt(topKInput.value, 10);
-        const selectedYear = yearSelect.value;
-
-        if (!query) {
-          displayStatus("Please enter a search query.", "info");
+      function renderNextBatch() {
+        const batch = allFoundResults.slice(currentDisplayIndex, currentDisplayIndex + BATCH_SIZE);
+        if (batch.length === 0) {
+          loadMoreContainer.classList.add("hidden");
           return;
         }
 
-        setLoading(true);
+        batch.forEach((item, i) => {
+          const groupName = getMonthYear(item.createDate);
+          const targetGrid = createTimelineSection(groupName);
+          renderImageCard(item, currentDisplayIndex + i, targetGrid);
+        });
+
+        currentDisplayIndex += BATCH_SIZE;
+        loadMoreContainer.classList.toggle("hidden", currentDisplayIndex >= allFoundResults.length);
+      }
+
+      async function searchImages() {
+        const query = searchInput.value.trim(); //
+        if (!query) return;
+
+        resultsContent.innerHTML = ""; 
+        allFoundResults = []; 
+        currentDisplayIndex = 0;
+        loadMoreContainer.classList.add("hidden");
+        loadingIndicator.classList.remove("hidden");
+        document.getElementById("resultCount").classList.add("hidden");
 
         try {
           const url = new URL(API_ENDPOINT, window.location.origin);
-          url.port = "8080";
+          url.port = "8080"; //
           url.searchParams.append("query", query);
-          url.searchParams.append("topK", topK);
+          url.searchParams.append("topK", topKInput.value);
+          if (yearSelect.value) url.searchParams.append("year", yearSelect.value);
+          
+          const res = await fetch(url);
+          const data = await res.json();
+          const items = Object.values(data); //
 
-          // Only append the year if a specific value is selected
-          // This allows backend @RequestParam(required=false) to work correctly
-          if (selectedYear) {
-            url.searchParams.append("year", selectedYear);
-          }
+          allFoundResults = items.sort((a, b) => {
+            const dateA = a.createDate ? new Date(a.createDate.replace(/:/g, '-')) : new Date(0);
+            const dateB = b.createDate ? new Date(b.createDate.replace(/:/g, '-')) : new Date(0);
+            return dateB - dateA;
+          });
 
-          const response = await fetch(url);
-          if (!response.ok) throw new Error(`Status: ${response.status}`);
-
-          const imageReferences = await response.json();
-          const count = Object.keys(imageReferences).length;
-
-          console.log(imageReferences);
-          if (imageReferences && count > 0) {
-            Object.entries(imageReferences)
-              .sort((a, b) => b[1] - a[1]) // Sort by score descending
-              .forEach(([imagePath, score], index) => {
-                renderImageCard(imageReferences[index]);
-              });
-
-            resultCount.textContent = `(${count} found)`;
-            displayStatus(`Successfully retrieved ${count} results.`, "success");
+          if (allFoundResults.length > 0) {
+            document.getElementById("resultCount").innerText = `${allFoundResults.length} PHOTOS MATCHED`;
+            document.getElementById("resultCount").classList.remove("hidden");
+            renderNextBatch();
           } else {
-            displayStatus("No matches found for your criteria.", "info");
+             resultsContent.innerHTML = `<div class="text-center py-20 text-gray-400 font-black uppercase tracking-widest text-sm">Nothing found in library.</div>`;
           }
-        } catch (error) {
-          console.error("Search failed:", error);
-          displayStatus(`Connection error: ${error.message}. Is the backend running?`, "error");
+        } catch (e) {
+          resultsContent.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-2xl text-center font-bold">Connection error: Check backend status.</div>`;
         } finally {
-          setLoading(false);
+          loadingIndicator.classList.add("hidden");
         }
       }
 
-      searchInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") searchImages();
+      // --- Lightbox Functions ---
+      function openLightbox(index) {
+        currentLightboxIndex = index;
+        rotation = 0;
+        const item = allFoundResults[index];
+        const imgEl = document.getElementById("lightboxImg");
+        imgEl.src = IMAGE_BASE_URL + item.imagePath;
+        imgEl.style.transform = `rotate(0deg)`;
+        document.getElementById("lightboxCaption").textContent = `${item.imagePath} • ${item.createDate || 'Unknown Date'}`;
+        document.getElementById("lightbox").classList.add("active");
+      }
+
+      function closeLightbox() {
+        document.getElementById("lightbox").classList.remove("active");
+        stopSlideshow();
+      }
+
+      function navigateLightbox(dir) {
+        currentLightboxIndex = (currentLightboxIndex + dir + allFoundResults.length) % allFoundResults.length;
+        openLightbox(currentLightboxIndex);
+      }
+
+      function rotateImage() {
+        rotation = (rotation + 90) % 360;
+        document.getElementById("lightboxImg").style.transform = `rotate(${rotation}deg)`;
+      }
+
+      function toggleSlideshow() {
+        if (slideshowInterval) { stopSlideshow(); } 
+        else {
+          document.getElementById("playIcon").innerText = "⏸️";
+          document.getElementById("playText").innerText = "Stop";
+          slideshowInterval = setInterval(() => navigateLightbox(1), 3000);
+        }
+      }
+
+      function stopSlideshow() {
+        clearInterval(slideshowInterval);
+        slideshowInterval = null;
+        document.getElementById("playIcon").innerText = "▶️";
+        document.getElementById("playText").innerText = "Play";
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (!document.getElementById("lightbox").classList.contains("active")) return;
+        if (e.key === "ArrowRight") navigateLightbox(1);
+        if (e.key === "ArrowLeft") navigateLightbox(-1);
+        if (e.key === "Escape") closeLightbox();
       });
 
-      window.onload = () => {
-        populateYears();
-        displayStatus("Ready. Using semantic search across your library.", "info");
-      };
+      window.onload = populateYears;
+      searchInput.addEventListener("keypress", (e) => e.key === "Enter" && searchImages());
     </script>
   </body>
 </html>
